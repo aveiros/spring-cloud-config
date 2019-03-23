@@ -16,6 +16,7 @@
 package org.springframework.cloud.config.server.bootstrap;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.config.client.ConfigClientProperties;
@@ -47,10 +48,6 @@ public class ConfigServerBootstrapConfiguration {
 	@EnableConfigurationProperties(ConfigServerProperties.class)
 	@Import({ EnvironmentRepositoryConfiguration.class, TransportConfiguration.class })
 	protected static class LocalPropertySourceLocatorConfiguration {
-
-		@Autowired
-		private EnvironmentRepository repository;
-
 		@Autowired
 		private ConfigClientProperties client;
 
@@ -58,9 +55,14 @@ public class ConfigServerBootstrapConfiguration {
 		private ConfigServerProperties server;
 
 		@Bean
-		public EnvironmentRepositoryPropertySourceLocator environmentRepositoryPropertySourceLocator() {
-			return new EnvironmentRepositoryPropertySourceLocator(this.repository, this.client.getName(),
-					this.client.getProfile(), getDefaultLabel());
+		public EnvironmentRepositoryPropertySourceLocator environmentRepositoryPropertySourceLocator(BootstrapEnvironmentRepositoryResolver resolver) {
+			return new EnvironmentRepositoryPropertySourceLocator(resolver.retrieveRepository(), this.client.getName(),
+				this.client.getProfile(), getDefaultLabel());
+		}
+
+		@Bean
+		public BootstrapEnvironmentRepositoryResolver bootstrapEnvironmentRepositoryResolver(DefaultListableBeanFactory beanFactory) {
+			return new BootstrapEnvironmentRepositoryResolver(beanFactory);
 		}
 
 		private String getDefaultLabel() {

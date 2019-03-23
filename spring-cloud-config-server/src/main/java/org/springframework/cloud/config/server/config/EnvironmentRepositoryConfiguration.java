@@ -16,10 +16,10 @@
 package org.springframework.cloud.config.server.config;
 
 import javax.servlet.http.HttpServletRequest;
-
 import org.eclipse.jgit.api.TransportConfigCallback;
-
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.config.server.environment.ConsulEnvironmentWatch;
@@ -49,12 +49,15 @@ import org.springframework.web.client.RestTemplate;
 		NativeRepositoryConfiguration.class, GitRepositoryConfiguration.class,
 		DefaultRepositoryConfiguration.class })
 public class EnvironmentRepositoryConfiguration {
-
 	@Bean
 	@ConditionalOnProperty(value = "spring.cloud.config.server.health.enabled", matchIfMissing = true)
-	public ConfigServerHealthIndicator configServerHealthIndicator(
-			EnvironmentRepository repository) {
-		return new ConfigServerHealthIndicator(repository);
+	public ConfigServerHealthIndicator configServerHealthIndicator(HealthIndicatorEnvironmentRepositoryResolver resolver) {
+		return new ConfigServerHealthIndicator(resolver.retrieveRepository());
+	}
+
+	@Bean
+	public HealthIndicatorEnvironmentRepositoryResolver healthIndicatorEnvironmentRepositoryResolver(DefaultListableBeanFactory beanFactory) {
+		return new HealthIndicatorEnvironmentRepositoryResolver(beanFactory);
 	}
 
 	@Configuration
@@ -104,13 +107,12 @@ class DefaultRepositoryConfiguration {
 }
 
 @Configuration
-@ConditionalOnMissingBean(EnvironmentRepository.class)
 @Profile("native")
 class NativeRepositoryConfiguration {
 
 	@Autowired
 	private ConfigurableEnvironment environment;
-	
+
 	@Autowired
 	private ConfigServerProperties configServerProperties;
 
@@ -155,7 +157,7 @@ class SvnRepositoryConfiguration {
 class VaultRepositoryConfiguration {
 	@Bean
 	public VaultEnvironmentRepository vaultEnvironmentRepository(
-			HttpServletRequest request, EnvironmentWatch watch) {
+			ObjectProvider<HttpServletRequest> request, EnvironmentWatch watch) {
 		return new VaultEnvironmentRepository(request, watch, new RestTemplate());
 	}
 }

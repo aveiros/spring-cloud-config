@@ -16,10 +16,10 @@
 package org.springframework.cloud.config.server.bootstrap;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.config.client.ConfigClientProperties;
+import org.springframework.cloud.config.server.config.CompositeConfiguration;
 import org.springframework.cloud.config.server.config.ConfigServerProperties;
 import org.springframework.cloud.config.server.config.EnvironmentRepositoryConfiguration;
 import org.springframework.cloud.config.server.config.TransportConfiguration;
@@ -46,8 +46,12 @@ import org.springframework.util.StringUtils;
 public class ConfigServerBootstrapConfiguration {
 
 	@EnableConfigurationProperties(ConfigServerProperties.class)
-	@Import({ EnvironmentRepositoryConfiguration.class, TransportConfiguration.class })
+	@Import({ EnvironmentRepositoryConfiguration.class, CompositeConfiguration.class, TransportConfiguration.class })
 	protected static class LocalPropertySourceLocatorConfiguration {
+
+		@Autowired
+		private EnvironmentRepository repository;
+
 		@Autowired
 		private ConfigClientProperties client;
 
@@ -55,14 +59,9 @@ public class ConfigServerBootstrapConfiguration {
 		private ConfigServerProperties server;
 
 		@Bean
-		public EnvironmentRepositoryPropertySourceLocator environmentRepositoryPropertySourceLocator(BootstrapEnvironmentRepositoryResolver resolver) {
-			return new EnvironmentRepositoryPropertySourceLocator(resolver.retrieveRepository(), this.client.getName(),
+		public EnvironmentRepositoryPropertySourceLocator environmentRepositoryPropertySourceLocator() {
+			return new EnvironmentRepositoryPropertySourceLocator(this.repository, this.client.getName(),
 				this.client.getProfile(), getDefaultLabel());
-		}
-
-		@Bean
-		public BootstrapEnvironmentRepositoryResolver bootstrapEnvironmentRepositoryResolver(DefaultListableBeanFactory beanFactory) {
-			return new BootstrapEnvironmentRepositoryResolver(beanFactory);
 		}
 
 		private String getDefaultLabel() {

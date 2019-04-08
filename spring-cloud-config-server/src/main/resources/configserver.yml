@@ -6,14 +6,25 @@ spring:
   autoconfigure.exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
   jmx:
     default_domain: cloud.config.server
+  profiles:
+    active: git,native,vault
   cloud:
     config:
       server:
+#        health:
+#          enabled: false
+        bootstrap: true
+        vault:
+          host: localhost
+          port: 8200
+          backend: ir
+          order: 2
         git:
-          uri: https://github.com/spring-cloud-samples/config-repo
-          repos:
-            - patterns: multi-repo-demo-*
-              uri: https://github.com/spring-cloud-samples/config-repo
+          uri: file://${HOME}/git
+          order: 1
+        native:
+          searchLocations: file://${HOME}/native
+          order: 0
 
 server:
   port: 8888

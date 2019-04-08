@@ -19,7 +19,6 @@ import javax.servlet.http.HttpServletRequest;
 import org.eclipse.jgit.api.TransportConfigCallback;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.config.server.environment.ConsulEnvironmentWatch;
@@ -51,13 +50,9 @@ import org.springframework.web.client.RestTemplate;
 public class EnvironmentRepositoryConfiguration {
 	@Bean
 	@ConditionalOnProperty(value = "spring.cloud.config.server.health.enabled", matchIfMissing = true)
-	public ConfigServerHealthIndicator configServerHealthIndicator(HealthIndicatorEnvironmentRepositoryResolver resolver) {
-		return new ConfigServerHealthIndicator(resolver.retrieveRepository());
-	}
-
-	@Bean
-	public HealthIndicatorEnvironmentRepositoryResolver healthIndicatorEnvironmentRepositoryResolver(DefaultListableBeanFactory beanFactory) {
-		return new HealthIndicatorEnvironmentRepositoryResolver(beanFactory);
+	public ConfigServerHealthIndicator configServerHealthIndicator(
+		EnvironmentRepository repository) {
+		return new ConfigServerHealthIndicator(repository);
 	}
 
 	@Configuration
